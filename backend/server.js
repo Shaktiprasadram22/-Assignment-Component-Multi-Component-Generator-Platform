@@ -36,23 +36,9 @@ app.use(
 app.use(express.json({ limit: "10mb" }));
 app.use(cookieParser());
 
-// Health check - place early
+// Health check
 app.get("/api/health", (req, res) => {
   res.json({ message: "Server is running!" });
-});
-
-// Add specific auth status route BEFORE general auth routes
-app.get("/api/auth/me", (req, res) => {
-  try {
-    console.log("Auth me route called");
-    res.json({
-      authenticated: false,
-      user: null,
-    });
-  } catch (error) {
-    console.error("Auth me error:", error);
-    res.status(401).json({ authenticated: false, user: null });
-  }
 });
 
 // Routes

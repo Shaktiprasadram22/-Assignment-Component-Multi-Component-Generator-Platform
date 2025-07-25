@@ -89,11 +89,11 @@ router.post("/logout", (req, res) => {
   res.json({ message: "Logged out successfully" });
 });
 
-// Get current user
-// Get current user
+// Get current user - FIXED to match frontend expectations
 router.get("/me", auth, (req, res) => {
-  console.log("GET /me called, user:", req.user); // ADD DEBUG
+  console.log("GET /me called, user:", req.user);
   res.json({
+    authenticated: true, // Added this field
     user: { id: req.user._id, email: req.user.email },
   });
 });
