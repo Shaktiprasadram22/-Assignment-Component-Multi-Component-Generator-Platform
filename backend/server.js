@@ -20,11 +20,12 @@ app.use(
   cors({
     origin:
       process.env.NODE_ENV === "production"
-        ? [process.env.FRONTEND_URL || "https://jazzy-gecko-b98462.netlify.app"]
+        ? ["https://jazzy-gecko-b98462.netlify.app"] // Direct URL
         : ["http://localhost:3000"],
     credentials: true,
   })
 );
+
 app.use(express.json({ limit: "10mb" }));
 app.use(cookieParser());
 
