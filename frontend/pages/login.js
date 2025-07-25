@@ -3,7 +3,7 @@ import { useRouter } from "next/router";
 import Link from "next/link";
 import { login } from "../utils/api";
 
-export default function Login() {
+export default function Login({ setIsAuthenticated }) {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -16,6 +16,13 @@ export default function Login() {
 
     try {
       await login(formData.email, formData.password);
+
+      // Update authentication state immediately
+      if (setIsAuthenticated) {
+        setIsAuthenticated(true);
+      }
+
+      // Redirect to dashboard
       router.push("/dashboard");
     } catch (error) {
       setError(error.response?.data?.message || "Login failed");

@@ -8,31 +8,38 @@ export default function App({ Component, pageProps }) {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
-  useEffect(() => {
-    const verifyAuth = async () => {
-      try {
-        await checkAuth();
-        setIsAuthenticated(true);
-      } catch (error) {
-        setIsAuthenticated(false);
-        // Only redirect if user is trying to access protected routes
-        if (router.pathname === "/dashboard") {
-          router.push("/login");
-        }
-      } finally {
-        setIsLoading(false);
+  const verifyAuth = async () => {
+    try {
+      const response = await checkAuth();
+      setIsAuthenticated(response.authenticated || false);
+    } catch (error) {
+      setIsAuthenticated(false);
+      // Only redirect if user is trying to access protected routes
+      if (router.pathname === "/dashboard") {
+        router.push("/login");
       }
-    };
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  useEffect(() => {
     verifyAuth();
-  }, []); // Remove router.pathname from dependencies to prevent infinite loops
+  }, []); // Run once on app load
 
-  // Handle route changes separately
+  // Check auth on route changes
   useEffect(() => {
     const handleRouteChange = () => {
-      // Only check auth on protected routes, don't run full auth check
+      // If user goes to dashboard and not authenticated, redirect to login
       if (router.pathname === "/dashboard" && !isAuthenticated) {
         router.push("/login");
+      }
+      // If user goes to login/signup and is authenticated, redirect to dashboard
+      if (
+        (router.pathname === "/login" || router.pathname === "/signup") &&
+        isAuthenticated
+      ) {
+        router.push("/dashboard");
       }
     };
 
@@ -51,5 +58,11 @@ export default function App({ Component, pageProps }) {
     );
   }
 
-  return <Component {...pageProps} isAuthenticated={isAuthenticated} />;
+  return (
+    <Component
+      {...pageProps}
+      isAuthenticated={isAuthenticated}
+      setIsAuthenticated={setIsAuthenticated}
+    />
+  );
 }
