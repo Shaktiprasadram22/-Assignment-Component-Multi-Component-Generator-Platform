@@ -16,6 +16,13 @@ connectDB();
 
 // Middleware
 app.use(helmet());
+
+// Request logging middleware
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+  next();
+});
+
 app.use(
   cors({
     origin: ["https://jazzy-gecko-b98462.netlify.app", "http://localhost:3000"],
@@ -33,6 +40,18 @@ app.use(cookieParser());
 app.use("/api/auth", authRoutes);
 app.use("/api/sessions", sessionRoutes);
 app.use("/api/ai", aiRoutes);
+
+// Catch-all error handler
+app.use((err, req, res, next) => {
+  console.error("Error:", err.message);
+  res.status(500).json({ error: "Something went wrong!" });
+});
+
+// 404 handler
+app.use("*", (req, res) => {
+  console.log("404 - Route not found:", req.originalUrl);
+  res.status(404).json({ error: "Route not found" });
+});
 
 // Health check
 app.get("/api/health", (req, res) => {
