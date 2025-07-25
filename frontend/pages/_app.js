@@ -53,3 +53,4 @@ export default function App({ Component, pageProps }) {
 
   return <Component {...pageProps} isAuthenticated={isAuthenticated} />;
 }
+// This file is the custom App component for Next.js, which wraps all pages
