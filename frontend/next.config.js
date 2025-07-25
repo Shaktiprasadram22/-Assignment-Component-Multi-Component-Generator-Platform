@@ -12,21 +12,6 @@ const nextConfig = {
         ? "https://ai-component-generator-backend-6yc0.onrender.com"
         : "http://localhost:5000",
   },
-  // REMOVED: async rewrites() - incompatible with output: 'export'
-  async headers() {
-    return [
-      {
-        source: "/(.*)",
-        headers: [
-          {
-            key: "Content-Security-Policy",
-            value:
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://unpkg.com https://cdn.tailwindcss.com; object-src 'none'; connect-src 'self' https://ai-component-generator-backend-6yc0.onrender.com;",
-          },
-        ],
-      },
-    ];
-  },
 };
 
 module.exports = nextConfig;
