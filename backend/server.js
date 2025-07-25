@@ -41,9 +41,26 @@ app.use("/api/auth", authRoutes);
 app.use("/api/sessions", sessionRoutes);
 app.use("/api/ai", aiRoutes);
 
+// Add a specific route to handle auth status checks
+app.get("/api/auth/status", (req, res) => {
+  try {
+    // If you have auth middleware, this should check if user is authenticated
+    // For now, just return a basic response
+    res.json({
+      authenticated: false,
+      user: null,
+      message: "Auth status check",
+    });
+  } catch (error) {
+    console.error("Auth status error:", error);
+    res.status(500).json({ error: "Auth status check failed" });
+  }
+});
+
 // Catch-all error handler
 app.use((err, req, res, next) => {
   console.error("Error:", err.message);
+  console.error("Stack:", err.stack);
   res.status(500).json({ error: "Something went wrong!" });
 });
 
