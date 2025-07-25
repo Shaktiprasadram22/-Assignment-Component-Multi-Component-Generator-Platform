@@ -1,60 +1,88 @@
 import axios from "axios";
 
-const API_BASE_URL =
+const baseURL =
   process.env.NODE_ENV === "production"
-    ? "https://your-backend-domain.com/api"
-    : "http://localhost:5000/api";
+    ? "https://ai-component-generator-backend-6yc0.onrender.com" // Your actual deployed backend URL
+    : "http://localhost:5000";
 
-const api = axios.create({
-  baseURL: API_BASE_URL,
+export const api = axios.create({
+  baseURL,
   withCredentials: true,
+  headers: {
+    "Content-Type": "application/json",
+  },
 });
+
+// Request interceptor
+api.interceptors.request.use(
+  (config) => {
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Response interceptor
+api.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  (error) => {
+    if (error.response?.status === 401) {
+      if (typeof window !== "undefined") {
+        window.location.href = "/login";
+      }
+    }
+    return Promise.reject(error);
+  }
+);
 
 // Auth API calls
 export const signup = async (email, password) => {
-  const response = await api.post("/auth/signup", { email, password });
+  const response = await api.post("/api/auth/signup", { email, password });
   return response.data;
 };
 
 export const login = async (email, password) => {
-  const response = await api.post("/auth/login", { email, password });
+  const response = await api.post("/api/auth/login", { email, password });
   return response.data;
 };
 
 export const logout = async () => {
-  const response = await api.post("/auth/logout");
+  const response = await api.post("/api/auth/logout");
   return response.data;
 };
 
 export const checkAuth = async () => {
-  const response = await api.get("/auth/me");
+  const response = await api.get("/api/auth/me");
   return response.data;
 };
 
 // AI API calls
 export const generateComponent = async (prompt) => {
-  const response = await api.post("/ai/generate", { prompt });
+  const response = await api.post("/api/ai/generate", { prompt });
   return response.data;
 };
 
 // Sessions API calls
 export const getSessions = async () => {
-  const response = await api.get("/sessions");
+  const response = await api.get("/api/sessions");
   return response.data;
 };
 
 export const createSession = async (title) => {
-  const response = await api.post("/sessions", { title });
+  const response = await api.post("/api/sessions", { title });
   return response.data;
 };
 
 export const getSession = async (id) => {
-  const response = await api.get(`/sessions/${id}`);
+  const response = await api.get(`/api/sessions/${id}`);
   return response.data;
 };
 
 export const updateSession = async (id, data) => {
-  const response = await api.put(`/sessions/${id}`, data);
+  const response = await api.put(`/api/sessions/${id}`, data);
   return response.data;
 };
 
