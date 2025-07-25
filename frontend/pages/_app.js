@@ -15,6 +15,7 @@ export default function App({ Component, pageProps }) {
         setIsAuthenticated(true);
       } catch (error) {
         setIsAuthenticated(false);
+        // Only redirect if user is trying to access protected routes
         if (router.pathname === "/dashboard") {
           router.push("/login");
         }
@@ -24,7 +25,23 @@ export default function App({ Component, pageProps }) {
     };
 
     verifyAuth();
-  }, [router.pathname]);
+  }, []); // Remove router.pathname from dependencies to prevent infinite loops
+
+  // Handle route changes separately
+  useEffect(() => {
+    const handleRouteChange = () => {
+      // Only check auth on protected routes, don't run full auth check
+      if (router.pathname === "/dashboard" && !isAuthenticated) {
+        router.push("/login");
+      }
+    };
+
+    router.events.on("routeChangeComplete", handleRouteChange);
+
+    return () => {
+      router.events.off("routeChangeComplete", handleRouteChange);
+    };
+  }, [isAuthenticated, router]);
 
   if (isLoading) {
     return (
