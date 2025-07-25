@@ -12,17 +12,7 @@ const nextConfig = {
         ? "https://ai-component-generator-backend-6yc0.onrender.com"
         : "http://localhost:5000",
   },
-  async rewrites() {
-    return [
-      {
-        source: "/api/:path*",
-        destination:
-          process.env.NODE_ENV === "production"
-            ? "https://ai-component-generator-backend-6yc0.onrender.com/api/:path*" // Your actual backend URL
-            : "http://localhost:5000/api/:path*",
-      },
-    ];
-  },
+  // REMOVED: async rewrites() - incompatible with output: 'export'
   async headers() {
     return [
       {
