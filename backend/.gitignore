@@ -1,0 +1,33 @@
+# Environment variables
+.env
+.env.local
+.env.production
+
+# Dependencies
+node_modules/
+
+# Logs
+logs/
+*.log
+
+# Database dumps
+*.sql
+*.dump
+
+# Uploads (if you add file upload functionality)
+uploads/
+temp/
+
+# Session store files (if using file-based sessions)
+sessions/
+
+# SSL certificates
+*.pem
+*.key
+*.crt
+
+# PM2 process file
+ecosystem.config.js
+
+# Cache
+.cache/
