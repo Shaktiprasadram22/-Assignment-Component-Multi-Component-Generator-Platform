@@ -23,17 +23,14 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor
+// Response interceptor - REMOVED automatic redirect
 api.interceptors.response.use(
   (response) => {
     return response;
   },
   (error) => {
-    if (error.response?.status === 401) {
-      if (typeof window !== "undefined") {
-        window.location.href = "/login";
-      }
-    }
+    // Don't automatically redirect on 401 - let the calling component handle it
+    // The _app.js already handles auth redirects properly
     return Promise.reject(error);
   }
 );

@@ -36,26 +36,29 @@ app.use(
 app.use(express.json({ limit: "10mb" }));
 app.use(cookieParser());
 
+// Health check - place early
+app.get("/api/health", (req, res) => {
+  res.json({ message: "Server is running!" });
+});
+
+// Add specific auth status route BEFORE general auth routes
+app.get("/api/auth/me", (req, res) => {
+  try {
+    console.log("Auth me route called");
+    res.json({
+      authenticated: false,
+      user: null,
+    });
+  } catch (error) {
+    console.error("Auth me error:", error);
+    res.status(401).json({ authenticated: false, user: null });
+  }
+});
+
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/sessions", sessionRoutes);
 app.use("/api/ai", aiRoutes);
-
-// Add a specific route to handle auth status checks
-app.get("/api/auth/status", (req, res) => {
-  try {
-    // If you have auth middleware, this should check if user is authenticated
-    // For now, just return a basic response
-    res.json({
-      authenticated: false,
-      user: null,
-      message: "Auth status check",
-    });
-  } catch (error) {
-    console.error("Auth status error:", error);
-    res.status(500).json({ error: "Auth status check failed" });
-  }
-});
 
 // Catch-all error handler
 app.use((err, req, res, next) => {
@@ -68,11 +71,6 @@ app.use((err, req, res, next) => {
 app.use("*", (req, res) => {
   console.log("404 - Route not found:", req.originalUrl);
   res.status(404).json({ error: "Route not found" });
-});
-
-// Health check
-app.get("/api/health", (req, res) => {
-  res.json({ message: "Server is running!" });
 });
 
 const PORT = process.env.PORT || 5000;
