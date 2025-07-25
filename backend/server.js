@@ -20,7 +20,7 @@ app.use(
   cors({
     origin:
       process.env.NODE_ENV === "production"
-        ? ["https://your-netlify-domain.netlify.app"]
+        ? ["https://jazzy-gecko-b98462.netlify.app/"]
         : ["http://localhost:3000"],
     credentials: true,
   })
