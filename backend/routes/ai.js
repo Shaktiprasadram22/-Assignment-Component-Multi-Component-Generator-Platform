@@ -4,17 +4,44 @@ const auth = require("../middleware/auth");
 
 const router = express.Router();
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// Initialize OpenAI with error handling
+let openai;
+try {
+  if (!process.env.OPENAI_API_KEY) {
+    console.error("OPENAI_API_KEY is not set in environment variables");
+  } else {
+    openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+    console.log("OpenAI client initialized successfully");
+  }
+} catch (error) {
+  console.error("Failed to initialize OpenAI client:", error);
+}
 
 router.post("/generate", auth, async (req, res) => {
   try {
+    console.log("AI generate request from user:", req.user.email);
     const { prompt } = req.body;
 
     if (!prompt) {
       return res.status(400).json({ message: "Prompt is required" });
     }
+
+    if (!openai) {
+      console.error("OpenAI client not initialized");
+      return res.status(500).json({
+        message: "AI service not available",
+        jsx: createFallbackComponent(
+          "ErrorComponent",
+          "AI service unavailable"
+        ),
+        css: "",
+        success: false,
+      });
+    }
+
+    console.log("Processing prompt:", prompt.substring(0, 100) + "...");
 
     const systemPrompt = `You are an expert React component generator that MUST follow these strict formatting rules.
 
@@ -67,6 +94,8 @@ User request: ${prompt}`;
       temperature: 0.3, // Lower temperature for more consistent formatting
     });
 
+    console.log("OpenAI API response received");
+
     let generatedContent = completion.choices[0].message.content.trim();
 
     // Clean up the response - remove any markdown formatting
@@ -84,12 +113,16 @@ User request: ${prompt}`;
       if (parsed.jsx && typeof parsed.jsx === "string") {
         jsxCode = parsed.jsx;
         cssCode = parsed.css || "";
+        console.log("Successfully parsed AI response");
       } else {
         throw new Error("Invalid JSON structure");
       }
     } catch (parseError) {
       console.error("JSON parsing failed:", parseError);
-      console.error("Generated content:", generatedContent);
+      console.error(
+        "Generated content:",
+        generatedContent.substring(0, 200) + "..."
+      );
 
       // If JSON parsing fails, create a fallback component using React.createElement
       const componentName =
@@ -125,6 +158,7 @@ User request: ${prompt}`;
       cssCode = "";
     }
 
+    console.log("Sending successful response");
     res.json({
       jsx: jsxCode,
       css: cssCode,
@@ -137,16 +171,19 @@ User request: ${prompt}`;
     // Return a fallback component even on API error
     const fallbackComponent = createFallbackComponent(
       "ErrorComponent",
-      "Error occurred"
+      "Error occurred while generating component"
     );
 
     res.status(500).json({
       jsx: fallbackComponent,
       css: "",
-      prompt: prompt,
+      prompt: req.body.prompt || "Unknown prompt",
       success: false,
       message: "Failed to generate component, returning fallback",
-      error: error.message,
+      error:
+        process.env.NODE_ENV === "development"
+          ? error.message
+          : "Internal server error",
     });
   }
 });
@@ -164,6 +201,9 @@ function extractComponentName(prompt) {
     "header",
     "footer",
     "sidebar",
+    "menu",
+    "list",
+    "table",
   ];
 
   for (const word of words) {
@@ -252,6 +292,8 @@ function createFallbackComponent(componentName, originalPrompt) {
 
 // Additional route for testing component format
 router.get("/test-format", auth, (req, res) => {
+  console.log("Test format request from user:", req.user.email);
+
   const sampleComponent = {
     jsx: `const TestButton = ({ text = 'Test Button', color = 'blue' }) => {
       const [clicked, setClicked] = useState(false);
@@ -265,6 +307,15 @@ router.get("/test-format", auth, (req, res) => {
   };
 
   res.json(sampleComponent);
+});
+
+// Health check for AI service
+router.get("/health", auth, (req, res) => {
+  res.json({
+    message: "AI service is running",
+    openaiConfigured: !!process.env.OPENAI_API_KEY,
+    user: req.user.email,
+  });
 });
 
 module.exports = router;

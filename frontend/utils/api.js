@@ -2,20 +2,31 @@ import axios from "axios";
 
 const baseURL =
   process.env.NODE_ENV === "production"
-    ? "https://ai-component-generator-backend-6yc0.onrender.com" // Your actual deployed backend URL
+    ? "https://ai-component-generator-backend-6yc0.onrender.com"
     : "http://localhost:5000";
 
 export const api = axios.create({
   baseURL,
-  withCredentials: true,
+  // Remove withCredentials for pure token approach
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-// Request interceptor
+// Request interceptor - Add token to every request
 api.interceptors.request.use(
   (config) => {
+    const token = localStorage.getItem("authToken");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+
+    console.log("API Request:", {
+      url: config.url,
+      method: config.method,
+      hasToken: !!token,
+    });
+
     return config;
   },
   (error) => {
@@ -23,14 +34,23 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor - REMOVED automatic redirect
+// Response interceptor
 api.interceptors.response.use(
   (response) => {
     return response;
   },
   (error) => {
-    // Don't automatically redirect on 401 - let the calling component handle it
-    // The _app.js already handles auth redirects properly
+    console.error("API Error:", {
+      status: error.response?.status,
+      message: error.response?.data?.message,
+      url: error.config?.url,
+    });
+
+    // Clear invalid tokens
+    if (error.response?.status === 401) {
+      localStorage.removeItem("authToken");
+    }
+
     return Promise.reject(error);
   }
 );
@@ -38,22 +58,42 @@ api.interceptors.response.use(
 // Auth API calls
 export const signup = async (email, password) => {
   const response = await api.post("/api/auth/signup", { email, password });
+
+  if (response.data.token) {
+    localStorage.setItem("authToken", response.data.token);
+  }
+
   return response.data;
 };
 
 export const login = async (email, password) => {
   const response = await api.post("/api/auth/login", { email, password });
+
+  if (response.data.token) {
+    localStorage.setItem("authToken", response.data.token);
+  }
+
   return response.data;
 };
 
 export const logout = async () => {
-  const response = await api.post("/api/auth/logout");
-  return response.data;
+  try {
+    await api.post("/api/auth/logout");
+  } catch (error) {
+    console.error("Logout error:", error);
+  } finally {
+    localStorage.removeItem("authToken");
+  }
 };
 
 export const checkAuth = async () => {
-  const response = await api.get("/api/auth/me");
-  return response.data;
+  try {
+    const response = await api.get("/api/auth/me");
+    return response.data;
+  } catch (error) {
+    localStorage.removeItem("authToken");
+    throw error;
+  }
 };
 
 // AI API calls

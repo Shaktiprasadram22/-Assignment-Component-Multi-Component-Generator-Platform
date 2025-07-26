@@ -8,7 +8,15 @@ const router = express.Router();
 // Register
 router.post("/signup", async (req, res) => {
   try {
+    console.log("Signup attempt:", req.body.email);
     const { email, password } = req.body;
+
+    // Validate input
+    if (!email || !password) {
+      return res
+        .status(400)
+        .json({ message: "Email and password are required" });
+    }
 
     // Check if user exists
     let user = await User.findOne({ email });
@@ -25,20 +33,26 @@ router.post("/signup", async (req, res) => {
       expiresIn: "7d",
     });
 
-    // Set cookie
-    res.cookie("token", token, {
+    // Set cookie with proper cross-origin settings
+    const cookieOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    });
+      path: "/",
+      domain: process.env.NODE_ENV === "production" ? undefined : undefined, // Let browser set domain
+    };
 
+    res.cookie("token", token, cookieOptions);
+
+    console.log("User created successfully:", user.email);
     res.status(201).json({
       message: "User created successfully",
       user: { id: user._id, email: user.email },
+      token: token, // Also send token in response for frontend storage
     });
   } catch (error) {
-    console.error(error.message);
+    console.error("Signup error:", error.message);
     res.status(500).json({ message: "Server error" });
   }
 });
@@ -46,7 +60,15 @@ router.post("/signup", async (req, res) => {
 // Login
 router.post("/login", async (req, res) => {
   try {
+    console.log("Login attempt:", req.body.email);
     const { email, password } = req.body;
+
+    // Validate input
+    if (!email || !password) {
+      return res
+        .status(400)
+        .json({ message: "Email and password are required" });
+    }
 
     // Check if user exists
     const user = await User.findOne({ email });
@@ -65,36 +87,69 @@ router.post("/login", async (req, res) => {
       expiresIn: "7d",
     });
 
-    // Set cookie
-    res.cookie("token", token, {
+    // Set cookie with proper cross-origin settings
+    const cookieOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    });
+      path: "/",
+      domain: process.env.NODE_ENV === "production" ? undefined : undefined, // Let browser set domain
+    };
 
+    res.cookie("token", token, cookieOptions);
+
+    console.log("Login successful:", user.email);
     res.json({
       message: "Login successful",
       user: { id: user._id, email: user.email },
+      token: token, // Also send token in response for frontend storage
     });
   } catch (error) {
-    console.error(error.message);
+    console.error("Login error:", error.message);
     res.status(500).json({ message: "Server error" });
   }
 });
 
 // Logout
 router.post("/logout", (req, res) => {
-  res.clearCookie("token");
+  const cookieOptions = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    path: "/",
+  };
+
+  res.clearCookie("token", cookieOptions);
+  console.log("User logged out");
   res.json({ message: "Logged out successfully" });
 });
 
-// Get current user - FIXED to match frontend expectations
+// Get current user - Enhanced with better error handling
 router.get("/me", auth, (req, res) => {
-  console.log("GET /me called, user:", req.user);
+  try {
+    console.log("GET /me called, user:", req.user.email);
+    res.json({
+      authenticated: true,
+      user: {
+        id: req.user._id,
+        email: req.user.email,
+      },
+    });
+  } catch (error) {
+    console.error("Get me error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// Test authentication endpoint
+router.get("/test", auth, (req, res) => {
   res.json({
-    authenticated: true, // Added this field
-    user: { id: req.user._id, email: req.user.email },
+    message: "Authentication working!",
+    user: {
+      id: req.user._id,
+      email: req.user.email,
+    },
   });
 });
 
